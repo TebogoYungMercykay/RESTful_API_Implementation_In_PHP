@@ -8,7 +8,7 @@
 
 - ## SECTION 1
 
-  - `Created By`: Selepe Sello
+  - `Created By:` Selepe Sello
   - The `End` Goal is to Have the `same` API Implemented using `.NET 6`.
 
 ---
