@@ -366,6 +366,306 @@
     // *******************************************************************
     // *------------ DONE, POST_REQUEST_API CLASS STARTS HERE ------------
 
+    class POST_REQUEST_API {
+        public $connectionObject = null;
+        public $finalResponse = '';
+        public $type = '';
+        // *-------------- CLASS METHODS, DESTRUCTOR AND CONSTRUCTOR --------------
+        public function __construct() {
+            if ($this->connectionObject == null) {
+                $this->connectionObject = Singleton_Database_Connection::instance();
+            }
+        }
+        public function __destruct() {
+            $this->connectionObject = null;
+        }
+
+        // *-------------- RESPONSE Method With Some Headers --------------
+        public function response($data, $code = 400) {
+            header("HTTP/1.1 $code");
+            header("Content-Type: application/json; charset=UTF-8");
+            header('Access-Control-Allow-Origin: *');
+            echo json_encode(
+                $data
+            );
+        }
+
+        // * This method Executes the sql request variable from the above Method
+        public function send_request($result) {
+            $data = $this->filterResult($result, ['id_trim', 'make', 'model', 'generation', 'year_from', 'year_to']);
+            $this->finalResponse = array(
+                "status" => "success",
+                "timestamp" => time(),
+                "data" => $data
+            );
+            $this->response($this->finalResponse, 200);
+        }
+
+        // * Helper Method for Implementing the Fuzzy Search
+        public function fuzzySearch($key_param, $value_param) {
+            $search_string = trim($value_param);
+            if (empty($search_string) === false) {
+                if (strlen($search_string) >= 3) {
+                    $len = strlen($search_string)/3;
+                    $param1 = '%' . $search_string . '%';
+                    $param2 = '%' . substr($search_string, 0, 2*$len) . '%';
+                    $param3 = '%' . substr($search_string, $len, strlen($search_string) - 1) . '%';
+                    $fuzzySearch = "$key_param LIKE '$param1' OR $key_param LIKE '$param2' OR $key_param LIKE '$param3'";
+                    return $fuzzySearch;
+                } else { // Length of String Less Than 3
+                    $param1 = '%' . $search_string . '%';
+                    $param2 = '%' . substr($search_string, 0, strlen($search_string)/2) . '%';
+                    $fuzzySearch = "$key_param LIKE '$param1' OR $key_param LIKE '$param2'";
+                    return $fuzzySearch;
+                }
+            }
+            return false;
+        }
+
+        // * This method Creates the JSON object from request result
+        public function filterResult($result, $valid) {
+            $data = mysqli_fetch_all($result, MYSQLI_ASSOC);
+            // Creating an empty associative array.
+            $dataFiltered = array();
+            foreach ($data as $row) {
+                $rowFiltered = array();
+                foreach ($valid as $key) {
+                    if (array_key_exists($key, $row)) {
+                        $rowFiltered[$key] = $row[$key];
+                    }
+                }
+                $dataFiltered[] = $rowFiltered;
+            }
+            return $dataFiltered;
+        }
+
+        // * DONE, SignUp Request
+        public function SignUp_Request($name, $surname, $email, $password, $PassConfirmation, $account) {
+            $validInputs = $this->connectionObject->validateSignupInputs($name, $surname, $email, $password, $PassConfirmation);
+            $userExists = $this->connectionObject->userExists($email);
+            if($validInputs === "SUCCESSFUL" && $userExists === false){
+                $response = $this->connectionObject->addUser($name, $surname, $email, $password, $account);
+                if ($response === true) {
+                    $apikey = $this->connectionObject->getAPI_Key($email);
+                    $this->finalResponse = [
+                        "status" => "success",
+                        "timestamp" => time(),
+                        "data" => $apikey
+                    ];
+                    $this->response($this->finalResponse, 200);
+                } else {
+                    $this->finalResponse = [
+                        "status" => "error",
+                        "timestamp" => time(),
+                        "data" => "Internal Server Error"
+                    ];
+                    $this->response($this->finalResponse, 400);
+                }
+            } else if($userExists === true){
+                $this->finalResponse = [
+                    "status" => "error",
+                    "timestamp" => time(),
+                    "data" => "User Already Exists"
+                ];
+                $this->response($this->finalResponse, 400);
+            }
+            $this->finalResponse = [
+                "status" => "error",
+                "timestamp" => time(),
+                "data" => "Invalid Inputs"
+            ];
+            $this->response($this->finalResponse, 400);
+        }
+
+        // * DONE, Login Request
+        public function Login_Request($email, $password) {
+            $validInputs = $this->connectionObject->validateLogin($email, $password);
+            if ($validInputs === true) {
+                $apikey = $this->connectionObject->getAPI_Key($email);
+                if ($this->connectionObject->Login_Request($apikey)) {
+                    $this->finalResponse = [
+                        "status" => "success",
+                        "timestamp" => time(),
+                        "data" => $apikey
+                    ];
+                    $this->response($this->finalResponse, 200);
+                }
+            }
+            $this->finalResponse = [
+                "status" => "error",
+                "timestamp" => time(),
+                "data" => "Internal Server Error/Incorrect password"
+            ];
+            $this->response($this->finalResponse, 400);
+        }
+
+        // * DONE, Logout Request
+        public function Logout_Request($apikey) {
+            $data_result = $this->connectionObject->Logout_Request($apikey);
+            if ($data_result == true) {
+                $this->finalResponse = [
+                    "status" => "success",
+                    "timestamp" => time(),
+                    "data" => "User Successfully Logged Out!"
+                ];
+                $this->response($this->finalResponse, 200);
+            }
+            $this->finalResponse = [
+                "status" => "error",
+                "timestamp" => time(),
+                "data" => "Error. Bad Request"
+            ];
+            $this->response($this->finalResponse, 400);
+        }
+
+        // * DONE, Delete Account
+        public function Delete_Account($apikey, $username, $password) {
+            if ($this->connectionObject->keyExists($apikey)) {
+                $data_result = $this->connectionObject->Delete_Account($username, $password);
+                if ($data_result == true) {
+                    $this->finalResponse = [
+                        "status" => "success",
+                        "timestamp" => time(),
+                        "data" => "Account Deletion Successful!"
+                    ];
+                    $this->response($this->finalResponse, 200);
+                }
+            }
+            $this->finalResponse = [
+                "status" => "error",
+                "timestamp" => time(),
+                "data" => "Internal Server Error/Incorrect details"
+            ];
+            $this->response($this->finalResponse, 400);
+        }
+
+        // * DONE, Change Password
+        public function Change_Password($apikey, $new_password) {
+            if ($this->connectionObject->keyExists($apikey)) {
+                $data_result = $this->connectionObject->Change_Password($apikey, $new_password);
+                if ($data_result == true) {
+                    $this->finalResponse = [
+                        "status" => "success",
+                        "timestamp" => time(),
+                        "data" => "Password Changed Successfully!"
+                    ];
+                    $this->response($this->finalResponse, 200);
+                }
+            }
+            $this->finalResponse = [
+                "status" => "error",
+                "timestamp" => time(),
+                "data" => "Incorrect API Key"
+            ];
+            $this->response($this->finalResponse, 400);
+        }
+
+        // * DONE, Generate New ApiKey
+        public function Generate_ApiKey($apikey) {
+            if ($this->connectionObject->keyExists($apikey)) {
+                $data_result = $this->connectionObject->Generate_ApiKey($apikey);
+                if ($data_result !== false) {
+                    $this->finalResponse = [
+                        "status" => "success",
+                        "timestamp" => time(),
+                        "data" => $data_result
+                    ];
+                    $this->response($this->finalResponse, 200);
+                }
+            }
+            $this->finalResponse = [
+                "status" => "error",
+                "timestamp" => time(),
+                "data" => "Incorrect API Key"
+            ];
+            $this->response($this->finalResponse, 400);
+        }
+
+        // * DONE, Preferences
+        public function Preferences($apikey, $theme, $pref) {
+            if ($this->connectionObject->keyExists($apikey)) {
+                $data_result = $this->connectionObject->Add_Update_Preference($apikey, $theme, $pref);
+                if ($data_result == true) {
+                    $this->finalResponse = [
+                        "status" => "success",
+                        "timestamp" => time(),
+                        "data" => "Preferences Set Successfully!"
+                    ];
+                    $this->response($this->finalResponse, 200);
+                }
+            }
+            $this->finalResponse = [
+                "status" => "error",
+                "timestamp" => time(),
+                "data" => "Incorrect API Key"
+            ];
+            $this->response($this->finalResponse, 400);
+        }
+
+        // * DONE, Get Data
+        public function Get_Data($apikey, $limit, $sort, $order) {
+            if ($this->connectionObject->keyExists($apikey)) {
+                $data_result = $this->connectionObject->Get_Data($apikey, $limit, $sort, $order);
+                if ($data_result !== null) {
+                    $this->send_request($data_result);
+                } else {
+                    $this->finalResponse = [
+                        "status" => "error",
+                        "timestamp" => time(),
+                        "data" => "Error. Bad Request"
+                    ];
+                    $this->response($this->finalResponse, 400);
+                }
+            }
+            $this->finalResponse = [
+                "status" => "error",
+                "timestamp" => time(),
+                "data" => "Incorrect API Key"
+            ];
+            $this->response($this->finalResponse, 400);
+        }
+
+        // * DONE, Get Data
+        public function Generate_External_data() { // Makes POST/GET Requests to External Ones
+            $ch = curl_init();
+            $api_url = "https://newsapi.org/v2/everything?q=apple&from=2023-09-11&to=2023-09-11&sortBy=popularity&apiKey=167f0ee3513942fb8691390781990393";
+            // Initialize cURL session
+            $ch = curl_init($api_url);
+            // Return the response as a string
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            // Use the GET method
+            curl_setopt($ch, CURLOPT_HTTPGET, true);
+            // Execute
+            $response = curl_exec($ch);
+            curl_close($ch);
+            // Check if the response is not empty and is a valid JSON
+            if (!empty($response) && ($data = json_decode($response, true)) !== null) {
+                // Check if the "articles" key exists in the JSON data
+                if (isset($data['articles']) && is_array($data['articles'])) {
+                    $this->finalResponse = [
+                        "status" => "error",
+                        "timestamp" => time(),
+                        "data" => $data['articles']
+                    ];
+                    $this->response($this->finalResponse, 200);
+                } else {
+                    $this->finalResponse = [
+                        "status" => "error",
+                        "timestamp" => time(),
+                        "data" => "No data found in the JSON Response"
+                    ];
+                    $this->response($this->finalResponse, 400);
+                }
+            }
+            $this->finalResponse = [
+                "status" => "error",
+                "timestamp" => time(),
+                "data" => "Invalid or empty JSON Response"
+            ];
+            $this->response($this->finalResponse, 400);
+        }
+    } // * DONE
+
     // ******************************************************************
     // * NOW THE IMPLEMENTATION IS COMPLETE => Handling Incoming Requests
 
