@@ -139,31 +139,16 @@
 
         // Getting the User's Email
         public function getEmail($apikey) {
-            $UserQueryExecution = $this->initConnection->prepare("SELECT API_key FROM users WHERE email = ?");
-            $UserQueryExecution->bind_param("s", $Email);
+            $UserQueryExecution = $this->initConnection->prepare("SELECT email FROM users WHERE API_key = ?");
+            $UserQueryExecution->bind_param("s", $apikey);
             $UserQueryExecution->execute();
             $result = $UserQueryExecution->get_result();
             if ($result->num_rows > 0) {
                 $row = $result->fetch_assoc();
-                return $row["API_key"];
+                return $row["email"];
             } else {
                 return "The API_Key entered is Incorrect!";
             }
-        }
-
-        // * Delete Account
-        public function Delete_Account($Email, $Password) {
-            if ($this->validateLogin($Email, $Password) === true) {
-                $UserQueryExecution = $this->initConnection->prepare("DELETE FROM users WHERE email = ?");
-                $UserQueryExecution->bind_param("s", $Email);
-                $UserQueryExecution->execute();
-                $result = $UserQueryExecution->get_result();
-                // If there are some rows returned
-                if ($result->num_rows > 0) {
-                    return true;
-                }
-            }
-            return "Internal Server Error/Incorrect Details";
         }
 
         //  * Log a User Out
@@ -269,10 +254,81 @@
             return false;
         }
 
-         // * Change Password
-         public function Change_Password($apikey, $new_password) {
+        // * Delete Account
+        public function Delete_Account($apikey, $Email, $Password) {
+            if ($this->validateLogin($Email, $Password) == true && $this->getEmail($apikey) == $Email) {
+                $this->initConnection->begin_transaction();
+                try {
+                    // Now, update the API key in the preferences table
+                    $UserQueryExecution = $this->initConnection->prepare("DELETE FROM preferences WHERE API_key=?");
+                    $UserQueryExecution->bind_param("s", $apikey);
+                    $UserQueryExecution->execute();
+                    // Check if the delete was successful in the preferences table
+                    if ($UserQueryExecution->affected_rows >= 0) {
+                        // Delete the associated preferences
+                        $PreferenceQueryExecution = $this->initConnection->prepare("DELETE FROM users WHERE API_key=?");
+                        $PreferenceQueryExecution->bind_param("s", $apikey);
+                        $PreferenceQueryExecution->execute();
+                        // Commit the transaction if both deletes were successful
+                        if ($PreferenceQueryExecution->affected_rows > 0) {
+                            $this->initConnection->commit();
+                            return "Account Deletion Successful!";
+                        }
+                    }
+                } catch (Exception $exception) {
+                    // Handle database-related exceptions
+                    $this->initConnection->rollback();
+                    return "Database error: " . $exception->getMessage();
+                } finally {
+                    // Re-enable the foreign key constraint
+                    $this->initConnection->query("SET FOREIGN_KEY_CHECKS=1");
+                }
+            } else {
+                return "Incorrect Details";
+            }
+        }
+
+        // * Change Password
+        public function Change_Password($apikey, $new_password) {
             // Check if the User already exists in the database
             if ($this->keyExists($apikey)) {
+                // Disable foreign key checks
+                try {
+                    $salt = $this->generateSalt();
+                    $new_password = $this->encrypt_password($new_password, $salt);
+                    $this->initConnection->begin_transaction();
+                    // Disable foreign key checks
+                    $disableForeignKeySQL = "SET FOREIGN_KEY_CHECKS=0";
+                    $this->initConnection->query($disableForeignKeySQL);
+                    // Connecting to the database to store User information
+                    $UserQueryExecution2 = $this->initConnection->prepare("UPDATE users SET password=?, salt=? WHERE API_key=?");
+                    $UserQueryExecution2->bind_param("sis", $new_password, $salt, $apikey);
+                    $UserQueryExecution2->execute();
+                    // Re-enable foreign key checks
+                    $enableForeignKeySQL = "SET FOREIGN_KEY_CHECKS=1";
+                    $this->initConnection->query($enableForeignKeySQL);
+                    // Commit the transaction
+                    $this->initConnection->commit();
+                    // If no row was added
+                    if ($UserQueryExecution2->affected_rows > 0) {
+                        return true;
+                    } else {
+                        return "Internal Server Error/Incorrect key";
+                    }
+                } catch (Exception $exception) {
+                    // Rollback the transaction if something goes wrong
+                    $this->initConnection->rollback();
+                }
+            } else {
+                return "Incorrect API Key";
+            }
+        }
+
+        // * Change Password
+        public function Change_Password_2($username, $password, $new_password) {
+            // Check if the User already exists in the database
+            $validate = $this->validateLogin($username, $password);
+            if ($this->validateLogin($username, $password)) {
                 $validate = $this->validateSignupInputs("Logic", "Legends", "myemail@gmail.com", $new_password, $new_password);
                 // Disable foreign key checks
                 if ($validate == "SUCCESSFUL") {
@@ -306,7 +362,7 @@
                     return $validate;
                 }
             } else {
-                return "Incorrect API Key";
+                return $validate;
             }
         }
 
@@ -314,8 +370,15 @@
         public function Get_Data($apikey, $limit, $sort, $order) {
             if ($this->keyExists($apikey)) {
                 $body_type = "Coupe";
-                $UserQueryExecution = $this->initConnection->prepare("SELECT * FROM cars WHERE body_type = ? SORT BY ? ? LIMIT ?");
-                $UserQueryExecution->bind_param("ssss", $body_type, $sort, $order, $limit);
+                // Corrected the SQL query, removed "SORT BY" and added placeholders for sorting and ordering.
+                $UserQueryExecution = $this->initConnection->prepare("SELECT * FROM cars WHERE body_type = ? ORDER BY $sort $order LIMIT ?");
+                // $UserQueryExecution = $this->initConnection->prepare("SELECT * FROM cars WHERE body_type = ? LIMIT ?");
+                // Check if the prepare statement succeeded
+                if (!$UserQueryExecution) {
+                    return null; // Return null on error
+                }
+                // Bind the parameters
+                $UserQueryExecution->bind_param("si", $body_type, $limit);
                 $UserQueryExecution->execute();
                 $result = $UserQueryExecution->get_result();
                 // If there are some rows returned
@@ -325,6 +388,7 @@
             }
             return null;
         }
+
 
         // * Method to check whether the provided Login details are Correct; returns true if successful else return string error message
         public function validateLogin($Email, $Password) {
@@ -581,8 +645,8 @@
         // * DONE, Delete Account
         public function Delete_Account($apikey, $username, $password) {
             if ($this->connectionObject->keyExists($apikey)) {
-                $data_result = $this->connectionObject->Delete_Account($username, $password);
-                if ($data_result == true) {
+                $data_result = $this->connectionObject->Delete_Account($apikey, $username, $password);
+                if ($data_result == "Account Deletion Successful!") {
                     $this->finalResponse = [
                         "status" => "success",
                         "timestamp" => time(),
@@ -593,7 +657,7 @@
                     $this->finalResponse = [
                         "status" => "error",
                         "timestamp" => time(),
-                        "data" => "Internal Server Error!"
+                        "data" => $data_result
                     ];
                     $this->response($this->finalResponse, 400);
                 }
@@ -601,16 +665,21 @@
                 $this->finalResponse = [
                     "status" => "error",
                     "timestamp" => time(),
-                    "data" => "Internal Server Error/Incorrect details"
+                    "data" => "Incorrect API Key"
                 ];
                 $this->response($this->finalResponse, 400);
             }
         }
 
         // * DONE, Change Password
-        public function Change_Password($apikey, $new_password) {
-            if ($this->connectionObject->keyExists($apikey)) {
-                $data_result = $this->connectionObject->Change_Password($apikey, $new_password);
+        public function Change_Password($param_1, $password, $new_password) {
+            if ($this->connectionObject->keyExists($param_1)) {
+                $data_result = null;
+                if ($password == null) {
+                    $data_result = $this->connectionObject->Change_Password($param_1, $new_password);
+                } else {
+                    $data_result = $this->connectionObject->Change_Password_2($param_1, $password, $new_password);
+                }
                 if ($data_result == true) {
                     $this->finalResponse = [
                         "status" => "success",
@@ -719,44 +788,39 @@
         }
 
         // * DONE, Get Data
-        public function Generate_External_data() { // Makes POST/GET Requests to External Ones
-            $ch = curl_init();
-            $api_url = "https://newsapi.org/v2/everything?q=apple&from=2023-09-11&to=2023-09-11&sortBy=popularity&apiKey=167f0ee3513942fb8691390781990393";
-            // Initialize cURL session
+        public function Generate_External_data() {
+            $api_key = "167f0ee3513942fb8691390781990393"; // Replace with your actual API key
+            $api_url = "https://newsapi.org/v2/everything?q=bitcoin&apiKey=$api_key";
             $ch = curl_init($api_url);
-            // Return the response as a string
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            // Use the GET method
             curl_setopt($ch, CURLOPT_HTTPGET, true);
-            // Execute
             $response = curl_exec($ch);
+            $this->response($response, 200);
             curl_close($ch);
-            // Check if the response is not empty and is a valid JSON
-            if (!empty($response) && ($data = json_decode($response, true)) !== null) {
-                // Check if the "articles" key exists in the JSON data
-                if (isset($data['articles']) && is_array($data['articles'])) {
-                    $this->finalResponse = [
-                        "status" => "error",
-                        "timestamp" => time(),
-                        "data" => $data['articles']
-                    ];
-                    $this->response($this->finalResponse, 200);
-                } else {
-                    $this->finalResponse = [
-                        "status" => "error",
-                        "timestamp" => time(),
-                        "data" => "No data found in the JSON Response"
-                    ];
-                    $this->response($this->finalResponse, 400);
-                }
-            } else {
-                $this->finalResponse = [
-                    "status" => "error",
-                    "timestamp" => time(),
-                    "data" => "Invalid or empty JSON Response"
-                ];
-                $this->response($this->finalResponse, 400);
-            }
+            // if (isset($response['status']) && $response['status'] == "ok") {
+            //     if (isset($response['articles']) && is_array($response['articles'])) {
+            //         $this->finalResponse = [
+            //             "status" => "success",
+            //             "timestamp" => time(),
+            //             "data" => $response['articles']
+            //         ];
+            //         $this->response($this->finalResponse, 200);
+            //     } else {
+            //         $this->finalResponse = [
+            //             "status" => "error",
+            //             "timestamp" => time(),
+            //             "data" => "No data found in the JSON Response"
+            //         ];
+            //         $this->response($this->finalResponse, 400);
+            //     }
+            // } else {
+            //     $this->finalResponse = [
+            //         "status" => "error",
+            //         "timestamp" => time(),
+            //         "data" => "Invalid or empty JSON Response"
+            //     ];
+            //     $this->response($this->finalResponse, 400);
+            // }
         }
     } // * DONE
 
@@ -826,15 +890,29 @@
                 //     $password = $password_dec;
                 // }
                 $api_request_object->Delete_Account($apikey, $username, $password);
-            } else if ($data['type'] == "change_password") {
-                $apikey = $data['change_password']['apikey'];
+            } else if ($data['type'] == "change_password" && isset($data['change_password']['username']) && isset($data['change_password']['password'])) {
+                $username = $data['change_password']['username'];
                 $new_password = $data['change_password']['new_password'];
                 // Decrypting the base64 new_password
                 // $password_con_dec = base64_decode($new_password);
                 // if ($password_dec !== false) {
                 //     $new_password = $password_con_dec;
                 // }
-                $api_request_object->Change_Password($apikey, $new_password);
+                $password = $data['change_password']['password'];
+                // $password_dec = base64_decode($password);
+                // if ($password_dec !== false) {
+                //     $password = $password_dec;
+                // }
+                $api_request_object->Change_Password($username, $password, $new_password);
+            } else if ($data['type'] == "change_password" && isset($data['change_password']['apikey'])) {
+                $apikey = $data['change_password']['apikey'];
+                // Decrypting the base64 new_password
+                // $password_con_dec = base64_decode($new_password);
+                // if ($password_dec !== false) {
+                //     $new_password = $password_con_dec;
+                // }
+                $new_password = $data['change_password']['new_password'];
+                $api_request_object->Change_Password($apikey, null, $new_password);
             } else if ($data['type'] == "generate_apikey") {
                 $apikey = $data['generate_apikey']['apikey'];
                 $api_request_object->Generate_ApiKey($apikey);
