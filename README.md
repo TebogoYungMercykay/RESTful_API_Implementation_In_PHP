@@ -305,8 +305,8 @@
     - ##### Some Useful Links:
 
       - phpMyAdmin Server: http://localhost/phpmyadmin/index.php?route=/
-      - Database: http://localhost/phpmyadmin/index.php?route=/database/structure&db=brands_database
-      - API: http://localhost/link/to/hack_api.php
+      - DatabaseURL: http://localhost/phpmyadmin/index.php?route=/database/structure&db=hack_api_test
+      - API: http://localhost/RESTful_API_Implementation_In_PHP/hack_api.php
 
     ---
   - ### How the Sign Up and Login Works:
