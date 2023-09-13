@@ -94,17 +94,26 @@
   "type":"login",
   "login":{
     "username":"teeray@gmail.com",
-    "password":"sKhal0@Tza"
+    "password":"tEerray@5e#hd"
   }
 }
 
 {
-    "type":"delete_account",
-    "delete_account":{
-        "apikey":"Gavx7lxjlGL3VXpTb4xFmIz8hHS3hjVW",
-        "username":"teeray@gmail.com",
-        "password":"sKhal0@Tza"
-    }
+  "type":"delete_account",
+  "delete_account":{
+    "apikey":"FNY5MphgCfmlxBDw8QlRRwRTo6uZXNbi",
+    "username":"teeray@gmail.com",
+    "password":"tEerray@5e#hd"
+  }
+}
+
+{
+  "type":"delete_account",
+  "delete_account":{
+    "apikey":"FNY5MphgCfmlxBDw8QlRRwRTo6uZXNbi",
+    "username":"teeray@gmail.com",
+    "password":"tEerray@5e#hd"
+  }
 }
 
 {
@@ -118,7 +127,7 @@
 {
     "type":"preferences",
     "preferences":{
-        "apikey":"Gavx7lxjlGL3VXpTb4xFmIz8hHS3hjVW",
+        "apikey":"a9198b68355f78830054c31a39916b7f",
         "theme":"light",
         "pref":"Inheritance"
     }
@@ -127,7 +136,7 @@
 {
     "type":"get_data",
     "get_data":{
-        "apikey":"Gavx7lxjlGL3VXpTb4xFmIz8hHS3hjVW",
+        "apikey":"a9198b68355f78830054c31a39916b7f",
         "limit":4,
         "sort":"id_trim",
         "order": "ASC"
@@ -137,6 +146,6 @@
 {
     "type":"generate_external_data",
     "generate_external_data":{
-        "apikey":"Gavx7lxjlGL3VXpTb4xFmIz8hHS3hjVW"
+        "apikey":"a9198b68355f78830054c31a39916b7f"
     }
 }
