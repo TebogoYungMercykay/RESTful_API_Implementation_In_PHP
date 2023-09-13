@@ -8,7 +8,7 @@
 
 - ## SECTION 1
 
-  - `Created By:` Selepe Sello
+  - `Created By`: Selepe Sello
   - The `End` Goal is to Have the `same` API Implemented using `.NET 6`.
 
 ---
@@ -42,6 +42,7 @@
   - The `Database` in Question is a `MySQL` Database, Tool: `phpMyAdmin`.
   - The the `API_keys` on the `database` for sending `requests` to the API are included in `SECTION 1`.
   - #### `Note Well:`
+
     - All `SENSITIVE` data sent to the api like `passwords`, `usernames/emails` and etc will be `encrypted` from the client side first.
     - Then on the `API`, The Data will be `Decrypted` and `Handled` accordingly.
   - #### `Example Requests:`
@@ -56,8 +57,9 @@
           "signup":{
             "name":"John",
             "surname":"Doe",
-            "email":"John",
+            "email":"johndoe3@gmail.com",
             "password":"tEst@us5e#hd",
+            "PassConfirmation":"tEst@us5e#hd",
             "account": "default"
           }
         }
@@ -160,20 +162,34 @@
           "data": "Account Deletion Successful!"
         }
         ```
-    - ###### `Update Details`:
+    - ###### `Change Password`:
 
-      - For this request, A user is not allowed to change their username/email
+      - For this request, A user is not allowed to change their username/
       - ###### Request by User 2:
 
-        ```json
-        {
-          "type":"change_password",
-          "change_password":{
-            "apikey":"K9yW8cGnE3qTfR7xV2sZ6bN1mJ4jL5p",
-            "new_password":"tEst@us5e#hd"
+        - ###### `When Logged In:`
+
+          ```json
+          {
+            "type":"change_password",
+            "change_password":{
+              "apikey":"K9yW8cGnE3qTfR7xV2sZ6bN1mJ4jL5p",
+              "new_password":"tEst@us5e#hd"
+            }
           }
-        }
-        ```
+          ```
+        - ###### `When User is not Logged In:`
+
+          ```json
+          {
+            "type":"change_password",
+            "change_password":{
+              "username":"johndoe3@gmail.com",
+              "password":"tEst@us5e#hd",
+              "new_password":"tEerray@5e#hd"
+            }
+          }
+          ```
       - ###### Response form API
 
         ```json
@@ -215,7 +231,7 @@
           "get_data":{
             "apikey":"K9yW8cGnE3qTfR7xV2sZ6bN1mJ4jL5p",
             "limit":4,
-            "sort":"id_data",
+            "sort":"id_trim",
             "order": "ASC"
           }
         }
@@ -263,6 +279,7 @@
           ]
         }
         ```
+
 ---
 
 - ## SECTION 4
@@ -285,6 +302,11 @@
           - Windows 10: [YouTube-Link](https://youtu.be/pBo_oClYjjM?feature=shared)
           - Windows 11: [YouTube-Link](https://youtu.be/pBo_oClYjjM?feature=shared)
       - You may/may not use the examples in `Section 2`
+    - ##### Some Useful Links:
+
+      - phpMyAdmin Server: http://localhost/phpmyadmin/index.php?route=/
+      - Database: http://localhost/phpmyadmin/index.php?route=/database/structure&db=brands_database
+      - API: http://localhost/link/to/hack_api.php
 
     ---
   - ### How the Sign Up and Login Works:
