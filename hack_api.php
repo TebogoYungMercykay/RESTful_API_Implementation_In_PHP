@@ -1,13 +1,12 @@
 <?php
     // *******************************************************************
     // *--------------- START, SINGLETON CLASS STARTS HERE ---------------
-
     class Singleton_Database_Connection {
         // Member variables for Singleton_Database_Connection class
-        private $Host = 'localhost';
-        private $DatabaseName = 'api_db';
-        private $Username = 'root';
-        private $Password = '';
+        private $Host = "localhost";
+        private $DatabaseName = "hack_api_test";
+        private $Username = "root";
+        private $Password = "";
         private $initConnection = null;
 
         // Creating an instance of the Singleton_Database_Connection class
@@ -49,19 +48,11 @@
             }
         }
 
-        // Encrypt Password and return a HASH of length 128, VARCHAR(128).
-        function encrypt_password($Password, $salt) {
-            // Using 1000 iterations for the hash_pbkdf2 method, and a HASH length of 32 BYTES
-            $hash = hash_pbkdf2("sha256", $Password, $salt, 1000, 32);
-            // Finally i Concatenate and encode the SALT and HASH
-            return base64_encode($salt . $hash);
-        }
-
-        // Verify Password, Encrypt the Password using the encrypt_password($Password, $salt) method and compare it with the stored one.
-        function verify_password($Password, $stored_hash, $salt) {
-            // $decoded = base64_decode($stored_hash);
-            $hash = $this->encrypt_password($Password, $salt);
-            return $hash == $stored_hash;
+        // Generate a RANDOM SALT value between [2000000000, 2147483646].
+        function generateSalt() {
+            $min = 2000000000;
+            $max = 2147483646;
+            return rand($min, $max);
         }
 
         // Generating random API Keys, default length is 20
@@ -77,6 +68,21 @@
                 $randomString .= $characters[rand(0, $charactersLength - 1)];
             }
             return $randomString;
+        }
+
+        // Encrypt Password and return a HASH of length 128, VARCHAR(128).
+        function encrypt_password($Password, $salt) {
+            // Using 1000 iterations for the hash_pbkdf2 method, and a HASH length of 32 BYTES
+            $hash = hash_pbkdf2("sha256", $Password, $salt, 1000, 32);
+            // Finally i Concatenate and encode the SALT and HASH
+            return base64_encode($salt . $hash);
+        }
+
+        // Verify Password, Encrypt the Password using the encrypt_password($Password, $salt) method and compare it with the stored one.
+        function verify_password($Password, $stored_hash, $salt) {
+            // $decoded = base64_decode($stored_hash);
+            $hash = $this->encrypt_password($Password, $salt);
+            return $hash == $stored_hash;
         }
 
         // Method to check whether a User already Exists by their email; returns true if successful else return false
@@ -113,7 +119,7 @@
                 $row = $result->fetch_assoc();
                 return $row["name"] . " " . $row["surname"];
             } else {
-                return "No Name";
+                return "The Email entered is Incorrect!";
             }
         }
 
@@ -127,7 +133,7 @@
                 $row = $result->fetch_assoc();
                 return $row["API_key"];
             } else {
-                return "No Key";
+                return "The Email entered is Incorrect!";
             }
         }
 
@@ -141,24 +147,8 @@
                 $row = $result->fetch_assoc();
                 return $row["API_key"];
             } else {
-                return "No Key";
+                return "The API_Key entered is Incorrect!";
             }
-        }
-
-        // * Change Password
-        public function Change_Password($API_key, $new_password) {
-            // Check if the User already exists in the database
-            if ($this->keyExists($API_key)) {
-                // Connecting to the database to store User information
-                $UserQueryExecution2 = $this->initConnection->prepare("UPDATE users SET password=? WHERE API_key=?");
-                $UserQueryExecution2->bind_param("ss", $new_password, $API_key);
-                $UserQueryExecution2->execute();
-                // If no row was added
-                if ($UserQueryExecution2->affected_rows > 0) {
-                    return true;
-                }
-            }
-            return false;
         }
 
         // * Delete Account
@@ -173,7 +163,7 @@
                     return true;
                 }
             }
-            return "Internal Server Error/Incorrect password";
+            return "Internal Server Error/Incorrect Details";
         }
 
         //  * Log a User Out
@@ -182,14 +172,14 @@
                 // Connecting to the database to store User information
                 $logged_in = false;
                 $UserQueryExecution2 = $this->initConnection->prepare("UPDATE users SET logged_in=? WHERE API_key=?");
-                $UserQueryExecution2->bind_param("is", $logged_in, $API_key);
+                $UserQueryExecution2->bind_param("is", $logged_in, $apikey);
                 $UserQueryExecution2->execute();
                 // If no row was added
                 if ($UserQueryExecution2->affected_rows > 0) {
                     return true;
                 }
             }
-            return "Internal Server Error/Incorrect password";
+            return "Internal Server Error/Incorrect key";
         }
 
         //  * Log a User Out
@@ -198,29 +188,29 @@
                 // Connecting to the database to store User information
                 $logged_in = true;
                 $UserQueryExecution2 = $this->initConnection->prepare("UPDATE users SET logged_in=? WHERE API_key=?");
-                $UserQueryExecution2->bind_param("is", $logged_in, $API_key);
+                $UserQueryExecution2->bind_param("is", $logged_in, $apikey);
                 $UserQueryExecution2->execute();
                 // If no row was added
                 if ($UserQueryExecution2->affected_rows > 0) {
                     return true;
                 }
             }
-            return "Internal Server Error/Incorrect password";
+            // return "Internal Server Error/Incorrect password";
         }
 
         // * PREFERENCES TABLE
-        public function Add_Update_Preference($API_key, $theme, $pref) {
+        public function Add_Update_Preference($apikey, $theme, $pref) {
             // Check if the User already exists in the database
-            if ($this->keyExists($API_key)) {
+            if ($this->keyExists($apikey)) {
                 // Check if there's an existing preference with the same API key
                 $UserQueryExecution = $this->initConnection->prepare("SELECT * FROM  preferences WHERE API_key=?");
-                $UserQueryExecution->bind_param("s", $API_key);
+                $UserQueryExecution->bind_param("s", $apikey);
                 $UserQueryExecution->execute();
                 $result = $UserQueryExecution->get_result();
                 if ($result->num_rows > 0) {
                     // Connecting to the database to store User information
                     $UserQueryExecution2 = $this->initConnection->prepare("UPDATE preferences SET theme=?, pref=? WHERE API_key=?");
-                    $UserQueryExecution2->bind_param("sss", $theme, $pref, $API_key);
+                    $UserQueryExecution2->bind_param("sss", $theme, $pref, $apikey);
                     $UserQueryExecution2->execute();
                     // If no row was added
                     if ($UserQueryExecution2->affected_rows <= 0) {
@@ -230,7 +220,7 @@
                 } else {
                     // Connecting to the database to store User information
                     $UserQueryExecution2 = $this->initConnection->prepare("INSERT INTO preferences (API_key, theme, pref) VALUES (?,?,?)");
-                    $UserQueryExecution2->bind_param("sss",  $API_key, $theme, $pref);
+                    $UserQueryExecution2->bind_param("sss",  $apikey, $theme, $pref);
                     $UserQueryExecution2->execute();
                     // If no row was added
                     if ($UserQueryExecution2->affected_rows <= 0) {
@@ -242,25 +232,87 @@
             return false;
         }
 
-        // * Generate New ApiKey
         public function Generate_ApiKey($apikey) {
             if ($this->keyExists($apikey)) {
-                // Connecting to the database to store User information
+                // Generating a new API key
                 $new_apiKey = $this->generateRandomAPIKey();
-                $UserQueryExecution2 = $this->initConnection->prepare("UPDATE users SET API_key=? WHERE API_key=?");
-                $UserQueryExecution2->bind_param("ss", $new_apiKey, $API_key);
-                $UserQueryExecution2->execute();
-                // If no row was added
-                if ($UserQueryExecution2->affected_rows > 0) {
-                    return $new_apiKey;
+                // Start a database transaction
+                $this->initConnection->begin_transaction();
+                try {
+                    // Temporarily disable the foreign key constraint in preferences
+                    $this->initConnection->query("SET FOREIGN_KEY_CHECKS=0");
+                    // Update the API key in the preferences table
+                    $PreferenceQueryExecution = $this->initConnection->prepare("UPDATE preferences SET API_key=? WHERE API_key=?");
+                    $PreferenceQueryExecution->bind_param("ss", $new_apiKey, $apikey);
+                    $PreferenceQueryExecution->execute();
+                    // Check if the update was successful in the preferences table
+                    if ($PreferenceQueryExecution->affected_rows >= 0) {
+                        // Now, update the API key in the users table
+                        $UserQueryExecution = $this->initConnection->prepare("UPDATE users SET API_key=? WHERE API_key=?");
+                        $UserQueryExecution->bind_param("ss", $new_apiKey, $apikey);
+                        $UserQueryExecution->execute();
+                        // Check if the update was successful in the users table
+                        if ($UserQueryExecution->affected_rows > 0) {
+                            // Commit the transaction if both updates were successful
+                            $this->initConnection->commit();
+                            return $new_apiKey;
+                        }
+                    }
+                } catch (Exception $exception) {
+                    // Handle any exceptions and rollback the transaction
+                    $this->initConnection->rollback();
+                } finally {
+                    // Re-enable the foreign key constraint
+                    $this->initConnection->query("SET FOREIGN_KEY_CHECKS=1");
                 }
             }
             return false;
         }
 
+         // * Change Password
+         public function Change_Password($apikey, $new_password) {
+            // Check if the User already exists in the database
+            if ($this->keyExists($apikey)) {
+                $validate = $this->validateSignupInputs("Logic", "Legends", "myemail@gmail.com", $new_password, $new_password);
+                // Disable foreign key checks
+                if ($validate == "SUCCESSFUL") {
+                    try {
+                        $salt = $this->generateSalt();
+                        $new_password = $this->encrypt_password($new_password, $salt);
+                        $this->initConnection->begin_transaction();
+                        // Disable foreign key checks
+                        $disableForeignKeySQL = "SET FOREIGN_KEY_CHECKS=0";
+                        $this->initConnection->query($disableForeignKeySQL);
+                        // Connecting to the database to store User information
+                        $UserQueryExecution2 = $this->initConnection->prepare("UPDATE users SET password=?, salt=? WHERE API_key=?");
+                        $UserQueryExecution2->bind_param("sis", $new_password, $salt, $apikey);
+                        $UserQueryExecution2->execute();
+                        // Re-enable foreign key checks
+                        $enableForeignKeySQL = "SET FOREIGN_KEY_CHECKS=1";
+                        $this->initConnection->query($enableForeignKeySQL);
+                        // Commit the transaction
+                        $this->initConnection->commit();
+                        // If no row was added
+                        if ($UserQueryExecution2->affected_rows > 0) {
+                            return true;
+                        } else {
+                            return "Internal Server Error/Incorrect key";
+                        }
+                    } catch (Exception $exception) {
+                        // Rollback the transaction if something goes wrong
+                        $this->initConnection->rollback();
+                    }
+                } else {
+                    return $validate;
+                }
+            } else {
+                return "Incorrect API Key";
+            }
+        }
+
         // * Get Data from the Database
-        public function Get_Data($API_key, $limit, $sort, $order) {
-            if ($this->keyExists($API_key)) {
+        public function Get_Data($apikey, $limit, $sort, $order) {
+            if ($this->keyExists($apikey)) {
                 $body_type = "Coupe";
                 $UserQueryExecution = $this->initConnection->prepare("SELECT * FROM cars WHERE body_type = ? SORT BY ? ? LIMIT ?");
                 $UserQueryExecution->bind_param("ssss", $body_type, $sort, $order, $limit);
@@ -294,7 +346,7 @@
                     if ($this->verify_password($Password, $pass, $salt)) {
                         return true;
                     }
-                    return "Incorrect password";
+                    return "Incorrect password Entered";
                 } else {
                     return "Internal Server Error/Incorrect password";
                 }
@@ -310,9 +362,9 @@
             if (!preg_match('/^[a-zA-Z ]+$/', $Name) || !preg_match('/^[a-zA-Z ]+$/', $Surname)) {
                 return "The NAME and SURNAME fields SHOULD contain only Characters";
             }
-            // The EMAIL contains '@gmail.com' or '@tuks.co.za', and also that it has a letter on the LEFT.
-            if (!preg_match('/^[a-zA-Z].*@gmail\.com$|^[a-zA-Z].*@tuks\.co\.za$/', $Email)) {
-                return "The EMAIL SHOULD contain '@gmail.com' or '@tuks.co.za', and AT LEAST a letter on the LEFT.";
+            // The EMAIL contains '@gmail.com' or '@icloud.co.za', and also that it has a letter on the LEFT.
+            if (!preg_match('/^[a-zA-Z].*@gmail\.com$|^[a-zA-Z].*@icloud\.co\.za$/', $Email)) {
+                return "The EMAIL SHOULD contain '@gmail.com' or '@icloud.co.za', and AT LEAST a letter on the LEFT.";
             }
             // Making sure the EMAIL doesn't contain Illegal Characters
             if (preg_match('/[\/\\\|<>\'\"]/', $Email)) {
@@ -341,28 +393,25 @@
             if ($this->userExists($Email)) {
                 return "User already exists";
             } else {
-                // Generate a RANDOM SALT value between [2000000000, 2147483646].
-                $min = 2000000000;
-                $max = 2147483646;
-                $salt = rand($min, $max);
-                $logged_in = true;
+                $salt = $this->generateSalt();
+                $logged = true;
                 // Hash PASSWORD using the random number as the salt with "sha256" and hash_pbkdf2 method
                 $hashedPassword = $this->encrypt_password($Password, $salt);
                 // Generating an API key for the User
                 $APIkey = $this->generateRandomAPIKey();
                 // Connecting to the database to store User information
-                $UserQueryExecution = $this->initConnection->prepare("INSERT INTO users (name, surname, email, password, API_key, salt, account, logged_in) VALUES (?,?,?,?,?,?,?)");
-                $UserQueryExecution->bind_param("sssssisi", $Name, $Surname, $Email, $hashedPassword, $APIkey, $salt, $account, $logged_in);
+                $UserQueryExecution = $this->initConnection->prepare("INSERT INTO users (name, surname, email, password, API_key, salt, account, logged_in) VALUES (?,?,?,?,?,?,?,?)");
+                $UserQueryExecution->bind_param("sssssisi", $Name, $Surname, $Email, $hashedPassword, $APIkey, $salt, $account, $logged);
                 $UserQueryExecution->execute();
                 // If no row was added
                 if ($UserQueryExecution->affected_rows <= 0) {
-                    return "Internal server error";
+                    return "Internal Server Error, Please Sign In Again";
                 }
                 return $APIkey;
             }
         }
     } // * DONE
-    
+
     // *******************************************************************
     // *------------ DONE, POST_REQUEST_API CLASS STARTS HERE ------------
 
@@ -457,7 +506,7 @@
                     $this->finalResponse = [
                         "status" => "error",
                         "timestamp" => time(),
-                        "data" => "Internal Server Error"
+                        "data" => $response
                     ];
                     $this->response($this->finalResponse, 400);
                 }
@@ -465,16 +514,17 @@
                 $this->finalResponse = [
                     "status" => "error",
                     "timestamp" => time(),
-                    "data" => "User Already Exists"
+                    "data" => "A User with the Same email Already Exists"
+                ];
+                $this->response($this->finalResponse, 400);
+            } else {
+                $this->finalResponse = [
+                    "status" => "error",
+                    "timestamp" => time(),
+                    "data" => $validInputs
                 ];
                 $this->response($this->finalResponse, 400);
             }
-            $this->finalResponse = [
-                "status" => "error",
-                "timestamp" => time(),
-                "data" => "Invalid Inputs"
-            ];
-            $this->response($this->finalResponse, 400);
         }
 
         // * DONE, Login Request
@@ -482,6 +532,7 @@
             $validInputs = $this->connectionObject->validateLogin($email, $password);
             if ($validInputs === true) {
                 $apikey = $this->connectionObject->getAPI_Key($email);
+                $this->connectionObject->Logout_Request($apikey);
                 if ($this->connectionObject->Login_Request($apikey)) {
                     $this->finalResponse = [
                         "status" => "success",
@@ -489,14 +540,22 @@
                         "data" => $apikey
                     ];
                     $this->response($this->finalResponse, 200);
+                } else {
+                    $this->finalResponse = [
+                        "status" => "error",
+                        "timestamp" => time(),
+                        "data" => "Internal Server Error!"
+                    ];
+                    $this->response($this->finalResponse, 400);
                 }
+            } else {
+                $this->finalResponse = [
+                    "status" => "error",
+                    "timestamp" => time(),
+                    "data" => "Internal Server Error/Incorrect password"
+                ];
+                $this->response($this->finalResponse, 400);
             }
-            $this->finalResponse = [
-                "status" => "error",
-                "timestamp" => time(),
-                "data" => "Internal Server Error/Incorrect password"
-            ];
-            $this->response($this->finalResponse, 400);
         }
 
         // * DONE, Logout Request
@@ -509,13 +568,14 @@
                     "data" => "User Successfully Logged Out!"
                 ];
                 $this->response($this->finalResponse, 200);
+            } else {
+                $this->finalResponse = [
+                    "status" => "error",
+                    "timestamp" => time(),
+                    "data" => "Error. Bad Request"
+                ];
+                $this->response($this->finalResponse, 400);
             }
-            $this->finalResponse = [
-                "status" => "error",
-                "timestamp" => time(),
-                "data" => "Error. Bad Request"
-            ];
-            $this->response($this->finalResponse, 400);
         }
 
         // * DONE, Delete Account
@@ -529,14 +589,22 @@
                         "data" => "Account Deletion Successful!"
                     ];
                     $this->response($this->finalResponse, 200);
+                } else {
+                    $this->finalResponse = [
+                        "status" => "error",
+                        "timestamp" => time(),
+                        "data" => "Internal Server Error!"
+                    ];
+                    $this->response($this->finalResponse, 400);
                 }
+            } else {
+                $this->finalResponse = [
+                    "status" => "error",
+                    "timestamp" => time(),
+                    "data" => "Internal Server Error/Incorrect details"
+                ];
+                $this->response($this->finalResponse, 400);
             }
-            $this->finalResponse = [
-                "status" => "error",
-                "timestamp" => time(),
-                "data" => "Internal Server Error/Incorrect details"
-            ];
-            $this->response($this->finalResponse, 400);
         }
 
         // * DONE, Change Password
@@ -550,14 +618,22 @@
                         "data" => "Password Changed Successfully!"
                     ];
                     $this->response($this->finalResponse, 200);
+                } else {
+                    $this->finalResponse = [
+                        "status" => "error",
+                        "timestamp" => time(),
+                        "data" => $data_result
+                    ];
+                    $this->response($this->finalResponse, 400);
                 }
+            } else {
+                $this->finalResponse = [
+                    "status" => "error",
+                    "timestamp" => time(),
+                    "data" => "Incorrect API Key"
+                ];
+                $this->response($this->finalResponse, 400);
             }
-            $this->finalResponse = [
-                "status" => "error",
-                "timestamp" => time(),
-                "data" => "Incorrect API Key"
-            ];
-            $this->response($this->finalResponse, 400);
         }
 
         // * DONE, Generate New ApiKey
@@ -571,14 +647,22 @@
                         "data" => $data_result
                     ];
                     $this->response($this->finalResponse, 200);
+                }  else {
+                    $this->finalResponse = [
+                        "status" => "error",
+                        "timestamp" => time(),
+                        "data" => "Internal Server Error!"
+                    ];
+                    $this->response($this->finalResponse, 400);
                 }
+            } else {
+                $this->finalResponse = [
+                    "status" => "error",
+                    "timestamp" => time(),
+                    "data" => "Incorrect API Key"
+                ];
+                $this->response($this->finalResponse, 400);
             }
-            $this->finalResponse = [
-                "status" => "error",
-                "timestamp" => time(),
-                "data" => "Incorrect API Key"
-            ];
-            $this->response($this->finalResponse, 400);
         }
 
         // * DONE, Preferences
@@ -592,14 +676,22 @@
                         "data" => "Preferences Set Successfully!"
                     ];
                     $this->response($this->finalResponse, 200);
+                } else {
+                    $this->finalResponse = [
+                        "status" => "error",
+                        "timestamp" => time(),
+                        "data" => "Internal Server Error!"
+                    ];
+                    $this->response($this->finalResponse, 400);
                 }
+            } else {
+                $this->finalResponse = [
+                    "status" => "error",
+                    "timestamp" => time(),
+                    "data" => "Incorrect API Key"
+                ];
+                $this->response($this->finalResponse, 400);
             }
-            $this->finalResponse = [
-                "status" => "error",
-                "timestamp" => time(),
-                "data" => "Incorrect API Key"
-            ];
-            $this->response($this->finalResponse, 400);
         }
 
         // * DONE, Get Data
@@ -616,13 +708,14 @@
                     ];
                     $this->response($this->finalResponse, 400);
                 }
+            } else {
+                $this->finalResponse = [
+                    "status" => "error",
+                    "timestamp" => time(),
+                    "data" => "Incorrect API Key"
+                ];
+                $this->response($this->finalResponse, 400);
             }
-            $this->finalResponse = [
-                "status" => "error",
-                "timestamp" => time(),
-                "data" => "Incorrect API Key"
-            ];
-            $this->response($this->finalResponse, 400);
         }
 
         // * DONE, Get Data
@@ -656,13 +749,14 @@
                     ];
                     $this->response($this->finalResponse, 400);
                 }
+            } else {
+                $this->finalResponse = [
+                    "status" => "error",
+                    "timestamp" => time(),
+                    "data" => "Invalid or empty JSON Response"
+                ];
+                $this->response($this->finalResponse, 400);
             }
-            $this->finalResponse = [
-                "status" => "error",
-                "timestamp" => time(),
-                "data" => "Invalid or empty JSON Response"
-            ];
-            $this->response($this->finalResponse, 400);
         }
     } // * DONE
 
@@ -671,9 +765,9 @@
 
     // Storing the Input data in the $json_data variable
     $json_data = file_get_contents('php://input');
-    // Now Executing things!!
-    $data1 = json_decode($json_data, true);
     if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+        // Now Executing things!!
+        $data = json_decode($json_data, true);
         $api_request_object = new POST_REQUEST_API();
         if (isset($data['type'])) {
             // Some More Functionality Loading ...
@@ -682,37 +776,37 @@
                 $surname = $data['signup']['surname'];
                 $email = $data['signup']['email'];
                 // Decrypting the base64 email
-                $email_dec = base64_decode($email);
-                if ($email_dec !== false) {
-                    $email = $email_dec;
-                }
+                // $email_dec = base64_decode($email);
+                // if ($email_dec !== false) {
+                //     $email = $email_dec;
+                // }
                 $password = $data['signup']['password'];
                 // Decrypting the base64 password
-                $password_dec = base64_decode($password);
-                if ($password_dec !== false) {
-                    $password = $password_dec;
-                }
+                // $password_dec = base64_decode($password);
+                // if ($password_dec !== false) {
+                //     $password = $password_dec;
+                // }
                 $PassConfirmation = $data['signup']['PassConfirmation'];
                 // Decrypting the base64 password
-                $password_con_dec = base64_decode($PassConfirmation);
-                if ($password_dec !== false) {
-                    $PassConfirmation = $password_con_dec;
-                }
+                // $password_con_dec = base64_decode($PassConfirmation);
+                // if ($password_dec !== false) {
+                //     $PassConfirmation = $password_con_dec;
+                // }
                 $account = $data['signup']['account'];
                 $api_request_object->SignUp_Request($name, $surname, $email, $password, $PassConfirmation, $account);
             } else if ($data['type'] == "login") {
-                $email = $data['login']['email'];
+                $email = $data['login']['username'];
                 // Decrypting the base64 email
-                $email_dec = base64_decode($email);
-                if ($email_dec !== false) {
-                    $email = $email_dec;
-                }
+                // $email_dec = base64_decode($email);
+                // if ($email_dec !== false) {
+                //     $email = $email_dec;
+                // }
                 $password = $data['login']['password'];
                 // Decrypting the base64 password
-                $password_dec = base64_decode($password);
-                if ($password_dec !== false) {
-                    $password = $password_dec;
-                }
+                // $password_dec = base64_decode($password);
+                // if ($password_dec !== false) {
+                //     $password = $password_dec;
+                // }
                 $api_request_object->Login_Request($email, $password);
             } else if ($data['type'] == "logout") {
                 $apikey = $data['logout']['apikey'];
@@ -721,25 +815,25 @@
                 $apikey = $data['delete_account']['apikey'];
                 $username = $data['delete_account']['username'];
                 // Decrypting the base64 email
-                $username_dec = base64_decode($username);
-                if ($username_dec !== false) {
-                    $username = $username_dec;
-                }
+                // $username_dec = base64_decode($username);
+                // if ($username_dec !== false) {
+                //     $username = $username_dec;
+                // }
                 $password = $data['delete_account']['password'];
                 // Decrypting the base64 password
-                $password_dec = base64_decode($password);
-                if ($password_dec !== false) {
-                    $password = $password_dec;
-                }
+                // $password_dec = base64_decode($password);
+                // if ($password_dec !== false) {
+                //     $password = $password_dec;
+                // }
                 $api_request_object->Delete_Account($apikey, $username, $password);
             } else if ($data['type'] == "change_password") {
                 $apikey = $data['change_password']['apikey'];
                 $new_password = $data['change_password']['new_password'];
                 // Decrypting the base64 new_password
-                $password_con_dec = base64_decode($new_password);
-                if ($password_dec !== false) {
-                    $new_password = $password_con_dec;
-                }
+                // $password_con_dec = base64_decode($new_password);
+                // if ($password_dec !== false) {
+                //     $new_password = $password_con_dec;
+                // }
                 $api_request_object->Change_Password($apikey, $new_password);
             } else if ($data['type'] == "generate_apikey") {
                 $apikey = $data['generate_apikey']['apikey'];
