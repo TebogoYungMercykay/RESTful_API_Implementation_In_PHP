@@ -10,6 +10,7 @@
 
   - `Created By`: Selepe Sello
   - The `End` Goal is to Have the `same` API Implemented using `.NET 6`.
+  - The Implementation is in this Repository: [RESTful_API_Implementation_In_DotNet](https://github.com/TebogoYungMercykay/RESTful_API_Implementation_In_DotNet.git)
 
 ---
 
@@ -305,8 +306,8 @@
     - ##### Some Useful Links:
 
       - phpMyAdmin Server: http://localhost/phpmyadmin/index.php?route=/
-      - DatabaseURL: http://localhost/phpmyadmin/index.php?route=/database/structure&db=hack_api_test
-      - API: http://localhost/RESTful_API_Implementation_In_PHP/hack_api.php
+      - Database: http://localhost/phpmyadmin/index.php?route=/database/structure&db=brands_database
+      - API: http://localhost/link/to/hack_api.php
 
     ---
   - ### How the Sign Up and Login Works:
