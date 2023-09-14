@@ -829,7 +829,11 @@
 
     // Storing the Input data in the $json_data variable
     $json_data = file_get_contents('php://input');
-    if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    if ($_SERVER['REQUEST_METHOD'] == 'GET') // Handling GET request
+        $api_request_object = new POST_REQUEST_API();
+        $api_request_object->Generate_External_data();
+        $response = ["message" => "This is a GET request."];
+    } else if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         // Now Executing things!!
         $data = json_decode($json_data, true);
         $api_request_object = new POST_REQUEST_API();
