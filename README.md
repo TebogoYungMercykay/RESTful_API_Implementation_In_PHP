@@ -12,6 +12,8 @@
   - The `End` Goal is to Have the `same` API Implemented using `.NET 6`.
   - The Implementation is in this Repository: [RESTful_API_Implementation_In_DotNet](https://github.com/TebogoYungMercykay/RESTful_API_Implementation_In_DotNet.git)
 
+  ---
+
 ---
 
 - ## SECTION 2
@@ -32,7 +34,7 @@
     - `Email`: johndoe3@gmail.com
     - `Password`: tEst@us5e#hd
     - `API_key`: K9yW8cGnE3qTfR7xV2sZ6bN1mJ4jL5p
-
+    ---
 ---
 
 - ## SECTION 3
@@ -280,36 +282,12 @@
           ]
         }
         ```
+    ---
 
 ---
 
 - ## SECTION 4
 
-  - ### Basic Setup Before Running/Interpreting the Codes
-
-    - Import the `data` table using the datadb database dumb.
-    - Import the `users` table using the usersdb database dumb, **OR ALTERNATIVELY**
-    - Create another table called `users` with the following fields: "id", "name", "surname", "email", "password", "API_key", "salt".
-    - The `id` field should be `Automatically` generated, Using `AUTO_INCREMENT=1`
-    - ##### Testing Requirements:
-
-      - At least Have Xampp installed
-      - Copy the souce code to the httdoc directory
-      - Run the `Apache` and `MySQL` server
-      - url:  `"http://localhost/path/to/hack_api.php"`
-      - method: `POST` - (HTTP method)
-      - You may use PostMan to Test if the API Works:
-        - Postman Installation/Tutorial:
-          - Windows 10: [YouTube-Link](https://youtu.be/pBo_oClYjjM?feature=shared)
-          - Windows 11: [YouTube-Link](https://youtu.be/pBo_oClYjjM?feature=shared)
-      - You may/may not use the examples in `Section 2`
-    - ##### Some Useful Links:
-
-      - phpMyAdmin Server: http://localhost/phpmyadmin/index.php?route=/
-      - Database: http://localhost/phpmyadmin/index.php?route=/database/structure&db=brands_database
-      - API: http://localhost/link/to/hack_api.php
-
-    ---
   - ### How the Sign Up and Login Works:
 
     - A User must have an account to view the Cars for practical 3, and all the other page.
@@ -344,8 +322,37 @@
     - The API key is a random string of `length=32`.
     - It Contains these `AlphaNumeric` Characters: `0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ`
     - The Key is then Displayed to the User using a `<p>` tag in every file right after the Heading.
+    ---
 
 ---
+
+- ## SECTION 5
+
+  - ### Basic Setup Before Running/Interpreting the Codes
+
+    - Import the `data` table using the datadb database dumb.
+    - Import the `users` table using the usersdb database dumb, **OR ALTERNATIVELY**
+    - Create another table called `users` with the following fields: "id", "name", "surname", "email", "password", "API_key", "salt".
+    - The `id` field should be `Automatically` generated, Using `AUTO_INCREMENT=1`
+    - ##### Testing Requirements:
+
+      - At least Have Xampp installed
+      - Copy the souce code to the httdoc directory
+      - Run the `Apache` and `MySQL` server
+      - url:  `"http://localhost/path/to/hack_api.php"`
+      - method: `POST` - (HTTP method)
+      - You may use PostMan to Test if the API Works:
+        - Postman Installation/Tutorial:
+          - Windows 10: [YouTube-Link](https://youtu.be/pBo_oClYjjM?feature=shared)
+          - Windows 11: [YouTube-Link](https://youtu.be/pBo_oClYjjM?feature=shared)
+      - You may/may not use the examples in `Section 2`
+    - ##### Some Useful Links:
+
+      - phpMyAdmin Server: http://localhost/phpmyadmin/index.php?route=/
+      - Database: http://localhost/phpmyadmin/index.php?route=/database/structure&db=brands_database
+      - API: http://localhost/link/to/hack_api.php
+
+    ---
 
 ---
 
