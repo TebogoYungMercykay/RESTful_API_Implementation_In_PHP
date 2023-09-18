@@ -1,0 +1,151 @@
+{
+    "type":"signup",
+    "signup":{
+        "name":"Tshire",
+        "surname":"Alufa",
+        "email":"teeray@gmail.com",
+        "password":"tEerray@5e#hd",
+        "PassConfirmation":"tEerray@5e#hd",
+        "account": "default"
+    }
+}
+
+{
+  "type":"login",
+  "login":{
+    "username":"teeray@gmail.com",
+    "password":"tEerray@5e#hd"
+  }
+}
+
+{
+  "type":"logout",
+  "logout":{
+    "apikey":"sRpL2lv5D36fd1rTgvG70SwTe17N2y6D"
+  }
+}
+
+{
+    "type":"preferences",
+    "preferences":{
+        "apikey":"sRpL2lv5D36fd1rTgvG70SwTe17N2y6D",
+        "theme":"dark",
+        "pref":"premium"
+    }
+}
+
+{
+    "type":"generate_apikey",
+    "generate_apikey":{
+        "apikey":"Xw8XErqzl4lWFDd8N2W838QrylZySKKk"
+    }
+}
+
+{
+    "type":"change_password",
+    "change_password":{
+        "apikey":"Gavx7lxjlGL3VXpTb4xFmIz8hHS3hjVW",
+        "new_password":"sKhal0@Tza"
+    }
+}
+
+{
+    "type":"change_password",
+    "change_password":{
+        "apikey":"a9198b68355f78830054c31a39916b7f",
+        "new_password":"@TestUser#564"
+    }
+}
+
+{
+    "type":"change_password",
+    "change_password":{
+        "apikey":"a9198b68355f78830054c31a39916b7f",
+        "new_password":"@TestUser#564"
+    }
+}
+
+{
+    "type":"change_password",
+    "change_password":{
+        "apikey":"XmVRPNPFU8NABrp8GHWPjIE2fqtZiKDm",
+        "new_password":"@TestUser#564"
+    }
+}
+
+{
+  "type":"login",
+  "login":{
+    "username":"johndoe3@gmail.com",
+    "password":"@TestUser#564"
+  }
+}
+
+{
+  "type":"logout",
+  "logout":{
+    "apikey":"a9198b68355f78830054c31a39916b7f"
+  }
+}
+
+---
+
+{
+  "type":"login",
+  "login":{
+    "username":"teeray@gmail.com",
+    "password":"tEerray@5e#hd"
+  }
+}
+
+{
+  "type":"delete_account",
+  "delete_account":{
+    "apikey":"FNY5MphgCfmlxBDw8QlRRwRTo6uZXNbi",
+    "username":"teeray@gmail.com",
+    "password":"tEerray@5e#hd"
+  }
+}
+
+{
+  "type":"delete_account",
+  "delete_account":{
+    "apikey":"FNY5MphgCfmlxBDw8QlRRwRTo6uZXNbi",
+    "username":"teeray@gmail.com",
+    "password":"tEerray@5e#hd"
+  }
+}
+
+{
+  "type":"login",
+  "login":{
+    "username":"teeray@gmail.com",
+    "password":"sKhal0@Tza"
+  }
+}
+
+{
+    "type":"preferences",
+    "preferences":{
+        "apikey":"a9198b68355f78830054c31a39916b7f",
+        "theme":"light",
+        "pref":"Inheritance"
+    }
+}
+
+{
+    "type":"get_data",
+    "get_data":{
+        "apikey":"a9198b68355f78830054c31a39916b7f",
+        "limit":4,
+        "sort":"id_trim",
+        "order": "ASC"
+    }
+}
+
+{
+    "type":"generate_external_data",
+    "generate_external_data":{
+        "apikey":"a9198b68355f78830054c31a39916b7f"
+    }
+}
