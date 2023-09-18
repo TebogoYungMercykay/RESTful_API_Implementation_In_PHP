@@ -10,7 +10,7 @@
         $api_request_object = new POST_Requests();
         $api_request_object->Generate_External_data();
         $response = ["message" => "This is a GET request."];
-    } else if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    } else if ($_SERVER['REQUEST_METHOD'] == 'POST') { // handling POST Requests
         // Now Executing things!!
         $data = json_decode($json_data, true);
         $api_request_object = new POST_Requests();
